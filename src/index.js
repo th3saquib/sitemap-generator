@@ -6,7 +6,6 @@ const eachSeries = require('async/eachSeries');
 const cpFile = require('cp-file');
 const normalizeUrl = require('normalize-url');
 const mitt = require('mitt');
-const format = require('date-fns/format');
 
 const createCrawler = require('./createCrawler');
 const SitemapRotator = require('./SitemapRotator');
@@ -85,7 +84,12 @@ module.exports = function SitemapGenerator(uri, opts) {
 
   crawler.on('fetchclienterror', (queueError, errorData) => {
     if (errorData.code === 'ENOTFOUND') {
-      emitError(404, `Site ${JSON.stringify(queueError)} could not be found. REQUEST: ${JSON.stringify(errorData)}`);
+      emitError(
+        404,
+        `Site ${JSON.stringify(
+          queueError
+        )} could not be found. REQUEST: ${JSON.stringify(errorData)}`
+      );
     } else {
       emitError(400, errorData.message);
     }
@@ -108,8 +112,14 @@ module.exports = function SitemapGenerator(uri, opts) {
 
       if (sitemapPath !== null) {
         // eslint-disable-next-line
-        const lastMod = queueItem.stateData.headers['last-modified'];
-        sitemap.addURL(url, depth, lastMod && format(lastMod, 'YYYY-MM-DD'));
+        const lastModHeader = queueItem.stateData.headers['last-modified'];
+        const lastModDate = lastModHeader
+          ? new Date(lastModHeader)
+          : new Date();
+        const lastMod = lastModDate
+          .toISOString()
+          .replace(/\.\d{3}Z$/, '+00:00');
+        sitemap.addURL(url, depth, lastMod);
       }
     }
   });
